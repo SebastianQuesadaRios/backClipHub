@@ -2,7 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const router = express.Router();
-const { login, register, reclamarCodigo, obtenerHistorial, loginAdmin, registerAdmin,obtenerGanadores  } =require('./controllers/cliphubControllers'); // Importa tanto login como register
+const { login, register } =require('./controllers/cliphubControllers'); // Importa tanto login como register
 
 // Cargar las variables de entorno correctamente
 dotenv.config({ path: './config.env' });

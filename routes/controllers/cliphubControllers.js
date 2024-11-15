@@ -8,25 +8,27 @@ const { connectDb, getDb } = require('../../database/mongo');
 
 
 const login = async (req, res) => {
-    const datos = req.body; 
-    console.log("Datos recibidos:", datos); 
+    const { email, password } = req.body; // Extrae email y password del cuerpo de la solicitud
+    
+    if (!email || !password) {
+        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios" });
+    }
 
-    const hashedPassword = CryptoJS.SHA256(datos.password, process.env.CODE_SECRET_DATA).toString();
-    console.log("SIN ENCRIPTAR: ", datos.password);
-    console.log("HACKEO: ", hashedPassword);
+    const hashedPassword = CryptoJS.SHA256(password, process.env.CODE_SECRET_DATA).toString();
 
     try {
         await connectDb(); // Conectar a la base de datos
         const db = getDb(); // Obtener la referencia a la base de datos
+
         const login = await db.collection('users').findOne({
-            correo: datos.email, // Cambiado de email a correo
+            correo: email,
             password: hashedPassword
         });
 
         if (login) {
             res.json({ status: "Bienvenido", userId: login._id, role: login.role });
         } else {
-            res.json({ status: "ErrorCredenciales" });
+            res.status(401).json({ status: "ErrorCredenciales", message: "Credenciales incorrectas" });
         }
     } catch (error) {
         console.error('Error al iniciar sesión:', error);
@@ -34,9 +36,14 @@ const login = async (req, res) => {
     }
 };
 
+
 // Lógica de registro
 const register = async (req, res) => {
     const { nombre, correo, contraseña } = req.body;
+
+    if (!nombre || !correo || !contraseña) {
+        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios" });
+    }
 
     // Encripta la contraseña recibida
     const hashedPassword = CryptoJS.SHA256(contraseña, process.env.CODE_SECRET_DATA).toString();
@@ -67,6 +74,7 @@ const register = async (req, res) => {
         res.status(500).json({ status: "Error", message: "Internal Server Error" });
     }
 };
+
 
 
 
