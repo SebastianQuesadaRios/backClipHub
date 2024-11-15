@@ -6,8 +6,6 @@ const { login, register, authenticateToken } = require('./controllers/cliphubCon
 const uploadMiddleware = require('../database/uploadMiddleware'); // Asegúrate de que esté apuntando correctamente
 const videoController = require('./controllers/videoController'); // Controlador para gestionar la subida de videos
 
-
-
 // Cargar las variables de entorno correctamente
 dotenv.config({ path: './config.env' });
 
@@ -21,20 +19,41 @@ mongoose.connect(process.env.MONGO_URI)
    });
 
 // Ruta para el login
-router.post('/login', login);
+router.post('/login', async (req, res) => {
+    try {
+        await login(req, res); // Llamar al controlador de login
+    } catch (error) {
+        console.error('Error al procesar login:', error);
+        res.status(500).json({ status: "Error", message: "Error interno al procesar el login" });
+    }
+});
 
 // Ruta para el registro
-router.post('/register', register);
+router.post('/register', async (req, res) => {
+    try {
+        await register(req, res); // Llamar al controlador de registro
+    } catch (error) {
+        console.error('Error al procesar registro:', error);
+        res.status(500).json({ status: "Error", message: "Error interno al procesar el registro" });
+    }
+});
 
 // Ruta para subir video
 router.post(
     '/upload-video',
     authenticateToken, // Agregar middleware de autenticación
     uploadMiddleware.single('video'),
-    videoController.uploadVideo
+    async (req, res) => {
+        try {
+            await videoController.uploadVideo(req, res); // Llamar al controlador de subida de video
+        } catch (error) {
+            console.error('Error al subir el video:', error);
+            res.status(500).json({ status: "Error", message: "Error al subir el video" });
+        }
+    }
 );
 
-
 module.exports = router;
+
 
 

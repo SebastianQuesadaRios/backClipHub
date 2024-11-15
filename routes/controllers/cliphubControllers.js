@@ -3,6 +3,7 @@ const { connectDb, getDb } = require('../../database/mongo');
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 
+// Middleware para verificar el token JWT
 const authenticateToken = (req, res, next) => {
     const token = req.headers['authorization'];
 
@@ -20,6 +21,7 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// Función para iniciar sesión
 const login = async (req, res) => {
     const { email, password } = req.body;
 
@@ -35,6 +37,7 @@ const login = async (req, res) => {
         const login = await db.collection('users').findOne({ correo: email, password: hashedPassword });
 
         if (login) {
+            // Crear un token JWT
             const token = jwt.sign({ userId: login._id, role: login.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
             return res.json({ status: "Bienvenido", token });
         } else {
@@ -46,6 +49,7 @@ const login = async (req, res) => {
     }
 };
 
+// Función para registrar un nuevo usuario
 const register = async (req, res) => {
     const { nombre, correo, contraseña } = req.body;
 
@@ -73,3 +77,4 @@ const register = async (req, res) => {
 };
 
 module.exports = { login, register, authenticateToken };
+
