@@ -2,7 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const router = express.Router();
-const { login, register, authenticateToken } = require('./controllers/cliphubControllers');
+const { login, register } = require('./controllers/cliphubControllers');
 const uploadMiddleware = require('../database/uploadMiddleware'); // Asegúrate de que esté apuntando correctamente
 const videoController = require('./controllers/videoController'); // Controlador para gestionar la subida de videos
 
@@ -41,16 +41,8 @@ router.post('/register', async (req, res) => {
 // Ruta para subir video
 router.post(
     '/upload-video',
-    authenticateToken, // Agregar middleware de autenticación
     uploadMiddleware.single('video'),
-    async (req, res) => {
-        try {
-            await videoController.uploadVideo(req, res); // Llamar al controlador de subida de video
-        } catch (error) {
-            console.error('Error al subir el video:', error);
-            res.status(500).json({ status: "Error", message: "Error al subir el video" });
-        }
-    }
+    videoController.uploadVideo
 );
 
 module.exports = router;

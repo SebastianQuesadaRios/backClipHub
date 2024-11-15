@@ -1,28 +1,7 @@
 const CryptoJS = require('crypto-js');
 const { connectDb, getDb } = require('../../database/mongo');
 const { ObjectId } = require('mongodb');
-const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv');
-dotenv.config(); // Cargar las variables de entorno
 
-
-// Middleware para verificar el token JWT
-const authenticateToken = (req, res, next) => {
-    const token = req.headers['authorization'];
-
-    if (!token) {
-        return res.status(403).json({ status: "Error", message: "Token requerido" });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ status: "Error", message: "Token inválido" });
-        }
-
-        req.user = user; // Guarda la información del usuario en la request
-        next();
-    });
-};
 
 // Función para iniciar sesión
 const login = async (req, res) => {
@@ -40,9 +19,7 @@ const login = async (req, res) => {
         const login = await db.collection('users').findOne({ correo: email, password: hashedPassword });
 
         if (login) {
-            // Crear un token JWT
-            const token = jwt.sign({ userId: login._id, role: login.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-            return res.json({ status: "Bienvenido", token });
+            return res.json({ status: "Bienvenido" }); // Elimina la creación del token aquí
         } else {
             return res.status(401).json({ status: "ErrorCredenciales", message: "Credenciales incorrectas" });
         }
@@ -79,5 +56,5 @@ const register = async (req, res) => {
     }
 };
 
-module.exports = { login, register, authenticateToken };
+module.exports = { login, register };
 
