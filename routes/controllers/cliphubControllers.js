@@ -10,29 +10,36 @@ const { connectDb, getDb } = require('../../database/mongo');
 const login = async (req, res) => {
     const { email, password } = req.body; // Extrae email y password del cuerpo de la solicitud
     
+    // Verificar si los campos están vacíos
     if (!email || !password) {
         return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios" });
     }
 
+    // Hashear la contraseña con el mismo código secreto usado en el registro
     const hashedPassword = CryptoJS.SHA256(password, process.env.CODE_SECRET_DATA).toString();
 
     try {
-        await connectDb(); // Conectar a la base de datos
-        const db = getDb(); // Obtener la referencia a la base de datos
+        // Conectar a la base de datos
+        await connectDb();
+        const db = getDb();
 
+        // Buscar al usuario por el correo electrónico y la contraseña hasheada
         const login = await db.collection('users').findOne({
             correo: email,
             password: hashedPassword
         });
 
+        // Si el usuario existe, devolver el ID y el rol
         if (login) {
-            res.json({ status: "Bienvenido", userId: login._id, role: login.role });
+            return res.json({ status: "Bienvenido", userId: login._id, role: login.role });
         } else {
-            res.status(401).json({ status: "ErrorCredenciales", message: "Credenciales incorrectas" });
+            // Si no se encuentra el usuario, devolver un error de credenciales incorrectas
+            return res.status(401).json({ status: "ErrorCredenciales", message: "Credenciales incorrectas" });
         }
     } catch (error) {
         console.error('Error al iniciar sesión:', error);
-        res.status(500).json({ status: "Error", message: "Internal Server Error" });
+        // Si ocurre un error en la conexión o la consulta, devolver un error interno
+        return res.status(500).json({ status: "Error", message: "Internal Server Error" });
     }
 };
 
