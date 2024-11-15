@@ -8,41 +8,49 @@ const { ObjectId } = require('mongodb');
  * @param {Object} res - Respuesta HTTP.
  */
 const uploadVideo = async (req, res) => {
-    const { title, description } = req.body; // Extrae el título y descripción del cuerpo de la solicitud.
-    const { file } = req; // Extrae el archivo cargado del middleware.
-    const userId = req.userId || 'user'; // Aquí debes asegurarte de obtener el ID del usuario.
+    const { title, description } = req.body;
+    const { userId } = req;
 
-    // Validar los datos recibidos
-    if (!file || !title || !description) {
-        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o el archivo de video." });
+    if (!req.file || !title || !description) {
+        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o el archivo" });
     }
 
     try {
-        // Conectar a la base de datos
-        await connectDb();
-        const db = getDb();
+        const fileContent = await fs.readFile(req.file.path);
+        const fileName = `${userId}_${Date.now()}_${req.file.originalname}`;
 
-        // Crear objeto del video para guardar en la base de datos
+        const userIdObjectId = new ObjectId(userId); // Asegúrate de usar 'new'
+
+        const params = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: fileName,
+            Body: fileContent,
+            ContentType: req.file.mimetype
+        };
+
+        const s3Response = await s3.upload(params).promise();
+
+        // Intentamos conectar a MongoDB y guardar el video
+        const db = await connectDb();
         const newVideo = {
             title,
             description,
-            userId: ObjectId(userId), // Asegúrate de que el ID de usuario sea válido.
-            s3Url: file.location, // La URL pública del archivo subida a S3
-            uploadDate: moment().toISOString(), // Fecha de carga en formato ISO
+            userId: userIdObjectId,
+            s3Url: s3Response.Location,
+            uploadDate: moment().format()
         };
 
-        // Insertar en la colección `videos`
-        await db.collection('videos').insertOne(newVideo);
-
-        // Responder con éxito
-        res.status(201).json({
-            status: "Éxito",
-            message: "Video subido exitosamente.",
-            videoUrl: file.location,
-        });
+        try {
+            await db.collection('videos').insertOne(newVideo); // Intentar insertar el video
+            await fs.unlink(req.file.path); // Eliminar archivo temporal
+            res.status(201).json({ status: "Éxito", message: "Video subido exitosamente", videoUrl: s3Response.Location });
+        } catch (dbError) {
+            console.error('Error al guardar el video en la base de datos:', dbError);
+            res.status(500).json({ status: "Error", message: "Error al guardar el video en la base de datos" });
+        }
     } catch (error) {
         console.error('Error al subir el video:', error);
-        res.status(500).json({ status: "Error", message: "Error al guardar el video en la base de datos." });
+        res.status(500).json({ status: "Error", message: "Error al cargar el video" });
     }
 };
 
