@@ -1,12 +1,10 @@
-const fs = require('fs/promises');
-const moment = require('moment-timezone');
 const { ObjectId } = require('mongodb');
 const { connectDb, getDb } = require('../../database/mongo');
-const s3 = require('../../database/uploadMiddleware'); // Asegúrate de que se está usando el middleware correctamente
+const moment = require('moment-timezone');
 
 const uploadVideo = async (req, res) => {
     const { title, description } = req.body;
-    const { userId } = req;
+    const { userId } = req; // El userId debe ser pasado desde el middleware de autenticación
 
     // Verifica que el archivo y los campos obligatorios estén presentes
     if (!req.file || !title || !description) {
@@ -16,7 +14,7 @@ const uploadVideo = async (req, res) => {
     try {
         const s3Url = req.file.location; // La URL del archivo subido a S3
 
-        const userIdObjectId = new ObjectId(userId); // Asegúrate de usar 'new'
+        const userIdObjectId = new ObjectId(userId); // Asegúrate de usar 'new' para convertir el userId a ObjectId
 
         const db = await connectDb(); // Conectar a la base de datos
         const newVideo = {
@@ -39,4 +37,5 @@ const uploadVideo = async (req, res) => {
 module.exports = {
     uploadVideo
 };
+
 

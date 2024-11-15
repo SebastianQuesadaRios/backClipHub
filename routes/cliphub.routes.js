@@ -41,8 +41,15 @@ router.post('/register', async (req, res) => {
 // Ruta para subir video
 router.post(
     '/upload-video',
-    uploadMiddleware.single('video'),
-    videoController.uploadVideo
+    uploadMiddleware.single('video'),  // Middleware para subir el video
+    async (req, res) => {
+        try {
+            await videoController.uploadVideo(req, res); // Llamar al controlador de subida de video
+        } catch (error) {
+            console.error('Error al procesar la subida del video:', error);
+            res.status(500).json({ status: "Error", message: "Error interno al procesar la subida del video" });
+        }
+    }
 );
 
 module.exports = router;
