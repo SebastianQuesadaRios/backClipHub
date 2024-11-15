@@ -9,7 +9,7 @@ const app = express();
 
 // Configuración de CORS
 const corsOptions = {
-    origin: ['http://localhost:5173', 'https://front-clip-hub.vercel.app/'], // Cambia 'https://tudominio.com' por tu dominio en producción
+    origin: ['http://localhost:5173', 'https://front-clip-hub.vercel.app'], // Cambia 'https://tudominio.com' por tu dominio en producción
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 };
