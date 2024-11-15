@@ -85,9 +85,9 @@ const register = async (req, res) => {
 
 const uploadVideo = async (req, res) => {
     const { title, description } = req.body; // Título y descripción del video
-    const { userId } = req; // ID del usuario que sube el video (asegúrate de obtenerlo correctamente)
-    
-    // Verifica que el archivo y los campos obligatorios existan
+    const { userId } = req; // ID del usuario que sube el video
+
+    // Verifica que el archivo y los campos obligatorios estén presentes
     if (!req.file || !title || !description) {
         return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o el archivo" });
     }
@@ -95,6 +95,9 @@ const uploadVideo = async (req, res) => {
     try {
         const fileContent = await fs.readFile(req.file.path); // Lee el archivo temporal
         const fileName = `${userId}_${Date.now()}_${req.file.originalname}`; // Nombre único
+
+        // Convertir el userId a ObjectId
+        const userIdObjectId = new ObjectId(userId);
 
         // Configuración de S3 para cargar el archivo
         const params = {
@@ -104,41 +107,34 @@ const uploadVideo = async (req, res) => {
             ContentType: req.file.mimetype
         };
 
-        // Cargar a S3
+        // Cargar el archivo a S3
         const s3Response = await s3.upload(params).promise();
 
-        // Guardar datos en MongoDB
+        // Guardar los datos en MongoDB
         await connectDb();
         const db = getDb();
 
         const newVideo = {
             title,
             description,
-            userId: new ObjectId(userId), // Corrección: instanciar ObjectId correctamente
+            userId: userIdObjectId, // Usar el ObjectId generado aquí
             s3Url: s3Response.Location, // URL del archivo en S3
             uploadDate: moment().format() // Fecha y hora de carga
         };
 
-        await db.collection('videos').insertOne(newVideo); // Insertar en la colección `videos`
+        // Insertar el nuevo video en la colección `videos`
+        await db.collection('videos').insertOne(newVideo);
 
-        // Limpia el archivo temporal
+        // Eliminar el archivo temporal
         await fs.unlink(req.file.path);
 
+        // Responder con el éxito de la operación
         res.status(201).json({ status: "Éxito", message: "Video subido exitosamente", videoUrl: s3Response.Location });
     } catch (error) {
         console.error('Error al subir el video:', error);
         res.status(500).json({ status: "Error", message: "Error al cargar el video" });
     }
 };
-
-module.exports = {
-    uploadVideo,
-};
-
-
-
-
-
     
 // Exporta las funciones
 module.exports = {
