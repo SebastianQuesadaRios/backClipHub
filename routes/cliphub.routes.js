@@ -2,9 +2,9 @@ const express = require('express');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const router = express.Router();
-const { login, register } = require('./controllers/cliphubControllers'); // Importa tanto login como register
-const uploadMiddleware = require('../database/uploadMiddleware'); // Asegúrate de que el middleware esté en el directorio correcto
-const videoController = require('./controllers/videoController'); // Importa el controlador para la subida de videos
+const { login, register } = require('./controllers/cliphubControllers');
+const uploadMiddleware = require('../database/uploadMiddleware'); // Asegúrate de que esté apuntando correctamente
+const videoController = require('./controllers/videoController'); // Controlador para gestionar la subida de videos
 
 // Cargar las variables de entorno correctamente
 dotenv.config({ path: './config.env' });
@@ -27,9 +27,12 @@ router.post('/register', register);
 // Ruta para subir video
 router.post(
     '/upload-video',
-    uploadMiddleware.single('video'), // Middleware de carga para el archivo de video
-    videoController.uploadVideo // Controlador que gestiona la lógica de la carga de video
+    authenticateToken, // Agregar middleware de autenticación
+    uploadMiddleware.single('video'),
+    videoController.uploadVideo
 );
 
+
 module.exports = router;
+
 
