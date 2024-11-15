@@ -2,10 +2,10 @@ const express = require('express');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const router = express.Router();
-const { login, register } = require('./controllers/cliphubControllers');
+const { login, register, authenticateToken } = require('./controllers/cliphubControllers');
 const uploadMiddleware = require('../database/uploadMiddleware'); // Asegúrate de que esté apuntando correctamente
 const videoController = require('./controllers/videoController'); // Controlador para gestionar la subida de videos
-const authenticateToken = require('../path/to/authenticateToken');  // Ajusta el path según sea necesario
+
 
 
 // Cargar las variables de entorno correctamente
