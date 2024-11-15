@@ -1,59 +1,34 @@
-const moment = require('moment-timezone');
-const { connectDb, getDb } = require('../../database/mongo');
-const { ObjectId } = require('mongodb');
-const fs = require('fs');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+const AWS = require('aws-sdk');
 
+// Configurar S3
+const s3 = new AWS.S3();
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'your-bucket-name', // Reemplaza con tu nombre de bucket
+    acl: 'public-read', // Política de acceso que necesites (o 'private' si no deseas acceso público)
+    metadata: (req, file, cb) => {
+      cb(null, { fieldName: file.fieldname });
+    },
+    key: (req, file, cb) => {
+      cb(null, Date.now().toString() + file.originalname); // Aquí defines cómo se almacenará el archivo
+    },
+  }),
+}).single('file'); // 'file' es el nombre del campo en tu formulario
 
-/**
- * Controlador para subir un video.
- * @param {Object} req - Solicitud HTTP.
- * @param {Object} res - Respuesta HTTP.
- */
-const uploadVideo = async (req, res) => {
-    const { title, description } = req.body;
-    const { userId } = req;
-
-    if (!req.file || !title || !description) {
-        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o el archivo" });
+// Controlador para subir el video
+const uploadVideo = (req, res) => {
+  upload(req, res, function (err) {
+    if (err) {
+      console.error('Error al subir el video', err);
+      return res.status(500).json({ status: 'Error', message: 'Error al subir el video' });
     }
-
-    try {
-        const fileContent = await fs.readFile(req.file.path);
-        const fileName = `${userId}_${Date.now()}_${req.file.originalname}`;
-
-        const userIdObjectId = new ObjectId(userId); // Asegúrate de usar 'new'
-
-        const params = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: fileName,
-            Body: fileContent,
-            ContentType: req.file.mimetype
-        };
-
-        const s3Response = await s3.upload(params).promise();
-
-        // Intentamos conectar a MongoDB y guardar el video
-        const db = await connectDb();
-        const newVideo = {
-            title,
-            description,
-            userId: userIdObjectId,
-            s3Url: s3Response.Location,
-            uploadDate: moment().format()
-        };
-
-        try {
-            await db.collection('videos').insertOne(newVideo); // Intentar insertar el video
-            await fs.unlink(req.file.path); // Eliminar archivo temporal
-            res.status(201).json({ status: "Éxito", message: "Video subido exitosamente", videoUrl: s3Response.Location });
-        } catch (dbError) {
-            console.error('Error al guardar el video en la base de datos:', dbError);
-            res.status(500).json({ status: "Error", message: "Error al guardar el video en la base de datos" });
-        }
-    } catch (error) {
-        console.error('Error al subir el video:', error);
-        res.status(500).json({ status: "Error", message: "Error al cargar el video" });
-    }
+    res.status(200).json({ status: 'Success', message: 'Video subido correctamente' });
+  });
 };
 
+// Exportar el controlador
 module.exports = { uploadVideo };
+
