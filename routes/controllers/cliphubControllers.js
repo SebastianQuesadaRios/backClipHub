@@ -1,9 +1,24 @@
 const CryptoJS = require('crypto-js');
 const { connectDb, getDb } = require('../../database/mongo');
 const { ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 
+const authenticateToken = (req, res, next) => {
+    const token = req.headers['authorization'];
 
+    if (!token) {
+        return res.status(403).json({ status: "Error", message: "Token requerido" });
+    }
 
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ status: "Error", message: "Token inválido" });
+        }
+
+        req.user = user; // Guarda la información del usuario en la request
+        next();
+    });
+};
 
 const login = async (req, res) => {
     const { email, password } = req.body;

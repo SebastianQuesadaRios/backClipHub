@@ -27,6 +27,7 @@ router.post('/register', register);
 // Ruta para subir video
 router.post(
     '/upload-video',
+    authenticateToken, // Agregar middleware de autenticación
     uploadMiddleware.single('video'),
     videoController.uploadVideo
 );
