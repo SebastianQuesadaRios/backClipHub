@@ -84,22 +84,19 @@ const register = async (req, res) => {
 };
 
 const uploadVideo = async (req, res) => {
-    const { title, description } = req.body; // Título y descripción del video
-    const { userId } = req; // ID del usuario que sube el video
+    const { title, description } = req.body;
+    const { userId } = req;
 
-    // Verifica que el archivo y los campos obligatorios estén presentes
     if (!req.file || !title || !description) {
         return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o el archivo" });
     }
 
     try {
-        const fileContent = await fs.readFile(req.file.path); // Lee el archivo temporal
-        const fileName = `${userId}_${Date.now()}_${req.file.originalname}`; // Nombre único
+        const fileContent = await fs.readFile(req.file.path);
+        const fileName = `${userId}_${Date.now()}_${req.file.originalname}`;
 
-        // Convertir el userId a ObjectId
-        const userIdObjectId = new ObjectId(userId);  // Usar 'new' para instanciar correctamente
+        const userIdObjectId = new ObjectId(userId); // Asegúrate de usar 'new'
 
-        // Configuración de S3 para cargar el archivo
         const params = {
             Bucket: process.env.AWS_BUCKET_NAME,
             Key: fileName,
@@ -107,34 +104,32 @@ const uploadVideo = async (req, res) => {
             ContentType: req.file.mimetype
         };
 
-        // Cargar el archivo a S3
         const s3Response = await s3.upload(params).promise();
 
-        // Guardar los datos en MongoDB
-        await connectDb();
-        const db = getDb();
-
+        // Intentamos conectar a MongoDB y guardar el video
+        const db = await connectDb();
         const newVideo = {
             title,
             description,
-            userId: userIdObjectId, // Usar el ObjectId generado aquí
-            s3Url: s3Response.Location, // URL del archivo en S3
-            uploadDate: moment().format() // Fecha y hora de carga
+            userId: userIdObjectId,
+            s3Url: s3Response.Location,
+            uploadDate: moment().format()
         };
 
-        // Insertar el nuevo video en la colección `videos`
-        await db.collection('videos').insertOne(newVideo);
-
-        // Eliminar el archivo temporal
-        await fs.unlink(req.file.path);
-
-        // Responder con el éxito de la operación
-        res.status(201).json({ status: "Éxito", message: "Video subido exitosamente", videoUrl: s3Response.Location });
+        try {
+            await db.collection('videos').insertOne(newVideo); // Intentar insertar el video
+            await fs.unlink(req.file.path); // Eliminar archivo temporal
+            res.status(201).json({ status: "Éxito", message: "Video subido exitosamente", videoUrl: s3Response.Location });
+        } catch (dbError) {
+            console.error('Error al guardar el video en la base de datos:', dbError);
+            res.status(500).json({ status: "Error", message: "Error al guardar el video en la base de datos" });
+        }
     } catch (error) {
         console.error('Error al subir el video:', error);
         res.status(500).json({ status: "Error", message: "Error al cargar el video" });
     }
 };
+
     
 // Exporta las funciones
 module.exports = {
