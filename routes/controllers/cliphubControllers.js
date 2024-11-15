@@ -2,6 +2,7 @@ const CryptoJS = require('crypto-js');
 const { connectDb, getDb } = require('../../database/mongo');
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+dotenv.config({ path: '../../config.env' });
 
 // Middleware para verificar el token JWT
 const authenticateToken = (req, res, next) => {
