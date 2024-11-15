@@ -97,7 +97,7 @@ const uploadVideo = async (req, res) => {
         const fileName = `${userId}_${Date.now()}_${req.file.originalname}`; // Nombre único
 
         // Convertir el userId a ObjectId
-        const userIdObjectId = new ObjectId(userId);
+        const userIdObjectId = new ObjectId(userId);  // Usar 'new' para instanciar correctamente
 
         // Configuración de S3 para cargar el archivo
         const params = {
