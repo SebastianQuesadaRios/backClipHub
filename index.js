@@ -24,7 +24,7 @@ app.get('/v1/signos', (req, res, next) => {
     next();
 });
 
-// Usar el router para las rutas relacionadas con 'margarita'
+
 app.use('/v1/ClipHub', router);
 
 // Iniciar el servidor
