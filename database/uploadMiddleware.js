@@ -1,20 +1,20 @@
 const multer = require('multer');
 const multerS3 = require('multer-s3');
-const AWS = require('aws-sdk');
+const { S3Client } = require('@aws-sdk/client-s3'); // Usando la nueva versión del SDK
 
 // Configura AWS con las credenciales del .env
-AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    }
 });
-
-const s3 = new AWS.S3(); // Cliente S3 usando las credenciales de AWS
 
 // Configuración de multer con S3
 const upload = multer({
     storage: multerS3({
-        s3: s3,
+        s3: s3Client, // Usamos el nuevo cliente S3
         bucket: process.env.AWS_BUCKET_NAME,
         acl: 'public-read', // Permitir acceso público a los archivos
         metadata: (req, file, cb) => {
@@ -35,4 +35,5 @@ const upload = multer({
 });
 
 module.exports = upload;
+
 
