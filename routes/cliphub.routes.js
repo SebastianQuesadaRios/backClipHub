@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const router = express.Router();
 const { login, register } = require('./controllers/cliphubControllers'); // Importa tanto login como register
-const uploadMiddleware = require('./database/uploadMiddleware'); // Asegúrate de que el middleware esté en el directorio correcto
+const uploadMiddleware = require('../database/uploadMiddleware'); // Asegúrate de que el middleware esté en el directorio correcto
 const videoController = require('./controllers/videoController'); // Importa el controlador para la subida de videos
 
 // Cargar las variables de entorno correctamente
