@@ -1,5 +1,5 @@
 const { Upload } = require('@aws-sdk/lib-storage');
-const s3 = require('.s3'); // Importa el cliente configurado
+const s3 = require('./s3'); // Importa el cliente configurado
 
 const uploadToS3 = async (file) => {
     try {
