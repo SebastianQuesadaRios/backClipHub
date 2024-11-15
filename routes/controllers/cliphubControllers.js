@@ -6,6 +6,7 @@ const moment = require('moment-timezone'); // Importa moment-timezone una sola v
 const { ObjectId } = require('mongodb');
 const { connectDb, getDb } = require('../../database/mongo'); 
 const s3 = require('../../database/uploadMiddleware');
+const { uploadToS3 } = require('../../config/s3Upload');
 
 const login = async (req, res) => {
     const { email, password } = req.body; // Extrae email y password del cuerpo de la solicitud
@@ -83,51 +84,42 @@ const register = async (req, res) => {
 };
 
 const uploadVideo = async (req, res) => {
-    const { title, description } = req.body; // Título y descripción del video
-    const { userId } = req; // ID del usuario que sube el video (asegúrate de obtenerlo correctamente)
-    
-    // Verifica que el archivo y los campos obligatorios existan
-    if (!req.file || !title || !description) {
-        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o el archivo" });
-    }
-
     try {
-        const fileContent = await fs.readFile(req.file.path); // Lee el archivo temporal
-        const fileName = `${userId}_${Date.now()}_${req.file.originalname}`; // Nombre único
+        const file = req.file; // Archivo cargado desde el middleware
+        if (!file) {
+            return res.status(400).json({ status: "Error", message: "No se envió ningún archivo" });
+        }
 
-        // Configuración de S3 para cargar el archivo
-        const params = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: fileName,
-            Body: fileContent,
-            ContentType: req.file.mimetype
-        };
+        // Subir a S3 usando la función creada
+        const result = await uploadToS3(file);
 
-        // Cargar a S3
-        const s3Response = await s3.upload(params).promise();
-
-        // Guardar datos en MongoDB
+        // Guardar datos del video en MongoDB
         await connectDb();
         const db = getDb();
 
         const newVideo = {
-            title,
-            description,
-            userId: ObjectId(userId),
-            s3Url: s3Response.Location, // URL del archivo en S3
-            uploadDate: moment().format() // Fecha y hora de carga
+            title: req.body.title || 'Sin título', // Opcional, según tu lógica
+            description: req.body.description || '',
+            userId: ObjectId(req.body.userId),
+            s3Url: result.Location, // URL del archivo en S3
+            uploadDate: moment().format(),
         };
 
-        await db.collection('videos').insertOne(newVideo); // Insertar en la colección `videos`
+        await db.collection('videos').insertOne(newVideo);
 
-        // Limpia el archivo temporal
-        await fs.unlink(req.file.path);
-
-        res.status(201).json({ status: "Éxito", message: "Video subido exitosamente", videoUrl: s3Response.Location });
+        res.status(201).json({
+            status: "Éxito",
+            message: "Video subido exitosamente",
+            videoUrl: result.Location,
+        });
     } catch (error) {
         console.error('Error al subir el video:', error);
         res.status(500).json({ status: "Error", message: "Error al cargar el video" });
     }
+};
+
+module.exports = {
+    uploadVideo,
 };
 
 
