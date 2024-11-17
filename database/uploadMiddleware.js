@@ -1,6 +1,6 @@
 const multer = require('multer');
 const multerS3 = require('multer-s3');
-const { S3Client } = require('@aws-sdk/client-s3'); // Usando la nueva versión del SDK
+const { S3Client } = require('@aws-sdk/client-s3');
 
 // Configura AWS con las credenciales del .env
 const s3Client = new S3Client({
@@ -14,26 +14,34 @@ const s3Client = new S3Client({
 // Configuración de multer con S3
 const upload = multer({
     storage: multerS3({
-        s3: s3Client, // Usamos el nuevo cliente S3
+        s3: s3Client,
         bucket: process.env.AWS_BUCKET_NAME,
-        acl: 'public-read', // Permitir acceso público a los archivos
+        acl: 'public-read',
         metadata: (req, file, cb) => {
             cb(null, { fieldName: file.fieldname });
         },
         key: (req, file, cb) => {
             const uniqueKey = `${Date.now()}-${file.originalname}`;
-            cb(null, uniqueKey); // Crear un nombre único para el archivo
+            cb(null, uniqueKey);
         },
     }),
     fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('video/')) {
-            cb(null, true); // Solo aceptar videos
+        if (
+            (file.fieldname === 'video' && file.mimetype.startsWith('video/')) ||
+            (file.fieldname === 'preview' && file.mimetype.startsWith('image/'))
+        ) {
+            cb(null, true); // Aceptar archivos de video e imagen
         } else {
-            cb(new Error('Solo se permiten archivos de video.'));
+            cb(new Error('Solo se permiten archivos de video e imagen.'));
         }
     },
 });
 
-module.exports = upload;
+const uploadMiddleware = upload.fields([
+    { name: 'video', maxCount: 1 },
+    { name: 'preview', maxCount: 1 }
+]);
+
+module.exports = uploadMiddleware;
 
 

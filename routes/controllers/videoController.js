@@ -4,32 +4,36 @@ const moment = require('moment-timezone');
 
 const uploadVideo = async (req, res) => {
     const { title, description } = req.body;
-    const { userId } = req; // El userId debe ser pasado desde el middleware de autenticación
 
-    // Verifica que el archivo y los campos obligatorios estén presentes
-    if (!req.file || !title || !description) {
-        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o el archivo" });
+    // Verifica que los archivos y los campos obligatorios estén presentes
+    if (!req.files || !req.files.video || !req.files.preview || !title || !description) {
+        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o los archivos" });
     }
 
     try {
-        const s3Url = req.file.location; // La URL del archivo subido a S3
-        const userIdObjectId = new ObjectId(userId); // Convertir el userId a ObjectId
+        const videoUrl = req.files.video[0].location; // URL del video subido a S3
+        const previewUrl = req.files.preview[0].location; // URL de la imagen de preview subida a S3
 
         const db = await connectDb(); // Conectar a la base de datos
         const newVideo = {
             title,
             description,
-            userId: userIdObjectId,
-            s3Url, // Usar la URL obtenida de S3
-            uploadDate: moment().format()
+            videoUrl, // URL del video
+            previewUrl, // URL de la imagen de preview
+            uploadDate: moment().format(),
         };
 
         // Guardar el video en la base de datos
         await db.collection('videos').insertOne(newVideo);
-        res.status(201).json({ status: "Éxito", message: "Video subido exitosamente", videoUrl: s3Url });
+        res.status(201).json({ 
+            status: "Éxito", 
+            message: "Video y preview subidos exitosamente", 
+            videoUrl, 
+            previewUrl 
+        });
     } catch (error) {
-        console.error('Error al subir el video:', error);
-        res.status(500).json({ status: "Error", message: "Error al cargar el video" });
+        console.error('Error al subir el video y el preview:', error);
+        res.status(500).json({ status: "Error", message: "Error al cargar el video y el preview" });
     }
 };
 

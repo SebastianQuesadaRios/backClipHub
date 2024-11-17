@@ -41,7 +41,7 @@ router.post('/register', async (req, res) => {
 // Ruta para subir video
 router.post(
     '/upload-video',
-    uploadMiddleware.single('video'),  // Middleware para subir el video
+    uploadMiddleware,  // Middleware para manejar múltiples archivos
     async (req, res) => {
         try {
             await videoController.uploadVideo(req, res); // Llamar al controlador de subida de video
@@ -51,6 +51,7 @@ router.post(
         }
     }
 );
+
 
 module.exports = router;
 
