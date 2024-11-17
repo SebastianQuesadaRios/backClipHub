@@ -1,53 +1,60 @@
+const CryptoJS = require('crypto-js');
 const { connectDb, getDb } = require('../../database/mongo');
-const moment = require('moment-timezone');
+const { ObjectId } = require('mongodb');
 
-const uploadVideo = async (req, res) => {
-    const { title, description } = req.body;
-    const email = req.body.email;  // Recibimos el email del frontend
 
-    // Verifica que los archivos y los campos obligatorios estén presentes
-    if (!req.files || !req.files.video || !req.files.preview || !title || !description || !email) {
-        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o los archivos" });
+// Función para iniciar sesión
+const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios" });
     }
+
+    const hashedPassword = CryptoJS.SHA256(password, process.env.CODE_SECRET_DATA).toString();
 
     try {
-        const videoUrl = req.files.video[0].location; // URL del video subido a S3
-        const previewUrl = req.files.preview[0].location; // URL de la imagen de preview subida a S3
+        await connectDb();
+        const db = getDb();
+        const login = await db.collection('users').findOne({ correo: email, password: hashedPassword });
 
-        const db = await connectDb(); // Conectar a la base de datos
-
-        // Buscar al usuario en la base de datos por el email
-        const user = await db.collection('users').findOne({ email });
-
-        if (!user) {
-            return res.status(404).json({ status: "Error", message: "Usuario no encontrado" });
+        if (login) {
+            return res.json({ status: "Bienvenido" }); // Elimina la creación del token aquí
+        } else {
+            return res.status(401).json({ status: "ErrorCredenciales", message: "Credenciales incorrectas" });
         }
-
-        // Crear el objeto del video con la información del usuario
-        const newVideo = {
-            title,
-            description,
-            videoUrl, // URL del video
-            previewUrl, // URL de la imagen de preview
-            uploadDate: moment().format(),
-            userId: user._id // Asociamos el video con el userId del usuario
-        };
-
-        // Guardar el video en la base de datos
-        await db.collection('videos').insertOne(newVideo);
-        res.status(201).json({ 
-            status: "Éxito", 
-            message: "Video y preview subidos exitosamente", 
-            videoUrl, 
-            previewUrl 
-        });
     } catch (error) {
-        console.error('Error al subir el video y el preview:', error);
-        res.status(500).json({ status: "Error", message: "Error al cargar el video y el preview" });
+        console.error('Error al iniciar sesión:', error);
+        return res.status(500).json({ status: "Error", message: "Internal Server Error" });
     }
 };
 
-module.exports = {
-    uploadVideo
+// Función para registrar un nuevo usuario
+const register = async (req, res) => {
+    const { nombre, correo, contraseña } = req.body;
+
+    if (!nombre || !correo || !contraseña) {
+        return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios" });
+    }
+
+    const hashedPassword = CryptoJS.SHA256(contraseña, process.env.CODE_SECRET_DATA).toString();
+
+    try {
+        await connectDb();
+        const db = getDb();
+        const existingUser = await db.collection('users').findOne({ correo });
+        if (existingUser) {
+            return res.status(400).json({ status: "Error", message: "El correo ya está en uso" });
+        }
+
+        const newUser = { nombre, correo, password: hashedPassword, role: 'user' };
+        await db.collection('users').insertOne(newUser);
+        res.status(201).json({ status: "Éxito", message: "Usuario registrado correctamente" });
+    } catch (error) {
+        console.error('Error al registrar el usuario:', error);
+        res.status(500).json({ status: "Error", message: "Internal Server Error" });
+    }
 };
+
+module.exports = { login, register };
 
