@@ -1,59 +1,15 @@
 const { ObjectId } = require('mongodb');
-const ffmpeg = require('fluent-ffmpeg');
-const fs = require('fs');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { connectDb, getDb } = require('../../database/mongo');
 const moment = require('moment-timezone');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegStatic = require('ffmpeg-static');
 const path = require('path');
+const fs = require('fs');
 
-// Configurar cliente de S3
-const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    }
-});
+// Configura ffmpeg y ffprobe con ffmpeg-static
+ffmpeg.setFfmpegPath(ffmpegStatic);
+ffmpeg.setFfprobePath(ffmpegStatic);
 
-// Función para generar y subir la miniatura
-const generateThumbnail = async (videoUrl) => {
-    return new Promise((resolve, reject) => {
-        // Usamos ffmpeg para crear la miniatura
-        const thumbnailPath = path.join(__dirname, 'thumbnail.jpg'); // Define el archivo de salida para la miniatura
-        ffmpeg(videoUrl)
-            .screenshots({
-                timestamps: ['50%'], // Toma la miniatura en el punto medio del video
-                filename: 'thumbnail.jpg',
-                folder: __dirname, // Guarda la miniatura en el directorio actual
-            })
-            .on('end', () => {
-                // Sube la miniatura a S3 después de generarla
-                const thumbnailFile = fs.createReadStream(thumbnailPath);
-                const uploadParams = {
-                    Bucket: process.env.AWS_BUCKET_NAME,
-                    Key: `thumbnails/${Date.now()}-thumbnail.jpg`, // Nombre único para la miniatura
-                    Body: thumbnailFile,
-                    ContentType: 'image/jpeg',
-                    ACL: 'public-read', // Permite acceso público
-                };
-
-                s3Client.send(new PutObjectCommand(uploadParams))
-                    .then((data) => {
-                        fs.unlinkSync(thumbnailPath); // Elimina el archivo temporal
-                        resolve(data); // Retorna la URL de la miniatura
-                    })
-                    .catch((err) => {
-                        fs.unlinkSync(thumbnailPath);
-                        reject(err);
-                    });
-            })
-            .on('error', (err) => {
-                reject(err);
-            });
-    });
-};
-
-// Función para subir video
 const uploadVideo = async (req, res) => {
     const { title, description } = req.body;
     const { userId } = req; // El userId debe ser pasado desde el middleware de autenticación
@@ -65,29 +21,87 @@ const uploadVideo = async (req, res) => {
 
     try {
         const s3Url = req.file.location; // La URL del archivo subido a S3
-
         const userIdObjectId = new ObjectId(userId); // Asegúrate de usar 'new' para convertir el userId a ObjectId
 
-        // Generar la miniatura
-        const thumbnailUrl = await generateThumbnail(s3Url);
+        // Ruta temporal para guardar el thumbnail localmente
+        const thumbnailPath = path.join(__dirname, '../../temp', `${Date.now()}-thumbnail.png`);
 
-        const db = await connectDb(); // Conectar a la base de datos
-        const newVideo = {
-            title,
-            description,
-            userId: userIdObjectId,
-            s3Url, // Usar la URL obtenida de S3
-            thumbnailUrl: thumbnailUrl.Location, // URL de la miniatura en S3
-            uploadDate: moment().format()
-        };
+        // Generar el thumbnail
+        ffmpeg(req.file.location)
+            .on('end', async () => {
+                console.log('Thumbnail generado exitosamente:', thumbnailPath);
 
-        // Guardar el video y la miniatura en la base de datos
-        await db.collection('videos').insertOne(newVideo);
-        res.status(201).json({ status: "Éxito", message: "Video subido exitosamente", videoUrl: s3Url, thumbnailUrl: thumbnailUrl.Location });
+                // Aquí debes subir el thumbnail a S3 para obtener su URL
+                const thumbnailUrl = await uploadThumbnailToS3(thumbnailPath);
+
+                // Conectar a la base de datos y guardar el video
+                const db = await connectDb();
+                const newVideo = {
+                    title,
+                    description,
+                    userId: userIdObjectId,
+                    s3Url, // Usar la URL obtenida de S3
+                    thumbnailUrl, // Guardar la URL del thumbnail
+                    uploadDate: moment().format()
+                };
+
+                // Eliminar el thumbnail temporal después de subirlo
+                fs.unlinkSync(thumbnailPath);
+
+                await db.collection('videos').insertOne(newVideo);
+                res.status(201).json({
+                    status: "Éxito",
+                    message: "Video subido exitosamente",
+                    videoUrl: s3Url,
+                    thumbnailUrl
+                });
+            })
+            .on('error', (err) => {
+                console.error('Error al generar el thumbnail:', err);
+                res.status(500).json({ status: "Error", message: "Error al generar el thumbnail" });
+            })
+            .screenshots({
+                count: 1,
+                folder: path.dirname(thumbnailPath),
+                filename: path.basename(thumbnailPath),
+                size: '320x240' // Tamaño del thumbnail
+            });
     } catch (error) {
         console.error('Error al subir el video:', error);
         res.status(500).json({ status: "Error", message: "Error al cargar el video" });
     }
+};
+
+// Función para subir el thumbnail a S3
+const uploadThumbnailToS3 = async (filePath) => {
+    const { Upload } = require('@aws-sdk/lib-storage');
+    const { S3Client } = require('@aws-sdk/client-s3');
+    const s3Client = new S3Client({
+        region: process.env.AWS_REGION,
+        credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        }
+    });
+
+    const fileName = path.basename(filePath);
+    const fileStream = fs.createReadStream(filePath);
+
+    const uploadParams = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `thumbnails/${fileName}`,
+        Body: fileStream,
+        ACL: 'public-read', // Permitir acceso público al thumbnail
+        ContentType: 'image/png'
+    };
+
+    const upload = new Upload({
+        client: s3Client,
+        params: uploadParams,
+    });
+
+    const result = await upload.done();
+    return result.Location; // Retorna la URL pública del thumbnail
 };
 
 module.exports = {
