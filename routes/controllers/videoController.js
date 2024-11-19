@@ -3,10 +3,10 @@ const { connectDb } = require('../../database/mongo');
 const moment = require('moment-timezone');
 
 const uploadVideo = async (req, res) => {
-    const { title, description, userId } = req.body; // Incluye userId del JSON recibido
+    const { title, description, username } = req.body; // Cambiado de userId a username
 
     // Verifica que los archivos y los campos obligatorios estén presentes
-    if (!req.files || !req.files.video || !req.files.preview || !title || !description || !userId) {
+    if (!req.files || !req.files.video || !req.files.preview || !title || !description || !username) {
         return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o los archivos" });
     }
 
@@ -15,10 +15,17 @@ const uploadVideo = async (req, res) => {
         const previewUrl = req.files.preview[0].location; // URL de la imagen de preview subida a S3
 
         const db = await connectDb(); // Conectar a la base de datos
+
+        // Buscar el userId en la base de datos usando el username
+        const user = await db.collection('users').findOne({ username });
+        if (!user) {
+            return res.status(404).json({ status: "Error", message: "Usuario no encontrado" });
+        }
+
         const newVideo = {
             title,
             description,
-            userId: ObjectId(userId), // Convertir userId a ObjectId
+            userId: user._id, // Asociar el _id del usuario
             videoUrl, // URL del video
             previewUrl, // URL de la imagen de preview
             uploadDate: moment().format(),
