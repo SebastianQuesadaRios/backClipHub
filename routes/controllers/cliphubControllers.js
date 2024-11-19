@@ -16,10 +16,18 @@ const login = async (req, res) => {
     try {
         await connectDb();
         const db = getDb();
-        const login = await db.collection('users').findOne({ correo: email, password: hashedPassword });
+        const user = await db.collection('users').findOne({ correo: email, password: hashedPassword });
 
-        if (login) {
-            return res.json({ status: "Bienvenido" }); // Elimina la creación del token aquí
+        if (user) {
+            // Crear un token simple usando el correo electrónico y el nombre de usuario
+            const token = CryptoJS.SHA256(user.correo + user.nombre, process.env.CODE_SECRET_DATA).toString();
+
+            // Enviar el token y el nombre de usuario en la respuesta
+            return res.json({
+                status: "Bienvenido",
+                token, // El token que será utilizado en el frontend
+                username: user.correo // Usamos el correo o el nombre del usuario como username
+            });
         } else {
             return res.status(401).json({ status: "ErrorCredenciales", message: "Credenciales incorrectas" });
         }
