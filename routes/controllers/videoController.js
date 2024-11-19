@@ -16,8 +16,8 @@ const uploadVideo = async (req, res) => {
 
         const db = await connectDb(); // Conectar a la base de datos
 
-        // Buscar el userId en la base de datos usando el username
-        const user = await db.collection('users').findOne({ username });
+        // Buscar el usuario en la base de datos usando el campo 'correo' (ya que 'username' es el correo en el frontend)
+        const user = await db.collection('users').findOne({ correo: username });
         if (!user) {
             return res.status(404).json({ status: "Error", message: "Usuario no encontrado" });
         }
