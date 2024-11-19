@@ -1,12 +1,12 @@
 const { ObjectId } = require('mongodb');
-const { connectDb, getDb } = require('../../database/mongo');
+const { connectDb } = require('../../database/mongo');
 const moment = require('moment-timezone');
 
 const uploadVideo = async (req, res) => {
-    const { title, description } = req.body;
+    const { title, description, userId } = req.body; // Incluye userId del JSON recibido
 
     // Verifica que los archivos y los campos obligatorios estén presentes
-    if (!req.files || !req.files.video || !req.files.preview || !title || !description) {
+    if (!req.files || !req.files.video || !req.files.preview || !title || !description || !userId) {
         return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o los archivos" });
     }
 
@@ -18,6 +18,7 @@ const uploadVideo = async (req, res) => {
         const newVideo = {
             title,
             description,
+            userId: ObjectId(userId), // Convertir userId a ObjectId
             videoUrl, // URL del video
             previewUrl, // URL de la imagen de preview
             uploadDate: moment().format(),
@@ -40,5 +41,6 @@ const uploadVideo = async (req, res) => {
 module.exports = {
     uploadVideo
 };
+
 
 
