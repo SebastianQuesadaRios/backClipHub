@@ -45,52 +45,10 @@ const uploadVideo = async (req, res) => {
     }
 };
 
-const getVideos = async (req, res) => {
-    try {
-        const db = await connectDb(); // Conectar a la base de datos
 
-        // Obtener todos los videos desde la base de datos
-        const videos = await db.collection('videos').aggregate([
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'userId',
-                    foreignField: '_id',
-                    as: 'user', // Alias para acceder al usuario
-                }
-            },
-            {
-                $unwind: '$user' // Desestructurar el arreglo de usuarios
-            },
-            {
-                $project: {
-                    title: 1,
-                    description: 1,
-                    videoUrl: 1,
-                    previewUrl: 1,
-                    user: {
-                        username: 1, // Suponiendo que el campo username está en la colección 'users'
-                    },
-                    uploadDate: 1,
-                }
-            }
-        ]).toArray(); // Ejecutar la consulta y convertir los resultados a un arreglo
-
-        if (!videos.length) {
-            return res.status(404).json({ status: "Error", message: "No hay videos disponibles" });
-        }
-
-        // Devolver los videos encontrados
-        res.status(200).json({ status: "Éxito", videos });
-    } catch (error) {
-        console.error('Error al obtener los videos:', error);
-        res.status(500).json({ status: "Error", message: "Error al obtener los videos" });
-    }
-};
 
 module.exports = {
-    uploadVideo,
-    getVideos
+    uploadVideo
 };
 
 
