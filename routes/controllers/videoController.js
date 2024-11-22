@@ -48,13 +48,28 @@ const uploadVideo = async (req, res) => {
 const getVideos = async (req, res) => {
     try {
         const db = await connectDb();
-        const videos = await db.collection('videos').find().toArray(); // Trae todos los documentos
-        res.status(200).json(videos);
+        const videos = await db.collection('videos').find().toArray();
+
+        // Iterar sobre los videos para agregar el nombre del usuario
+        const videosWithUsernames = await Promise.all(
+            videos.map(async (video) => {
+                const user = await db.collection('users').findOne({ _id: video.userId });
+                return {
+                    ...video,
+                    _id: video._id.toString(),
+                    userId: video.userId.toString(),
+                    username: user ? user.nombre : "Usuario desconocido", // Agregar el nombre del usuario
+                };
+            })
+        );
+
+        res.status(200).json(videosWithUsernames);
     } catch (error) {
         console.error('Error al obtener los videos:', error);
         res.status(500).json({ status: 'Error', message: 'No se pudieron obtener los videos' });
     }
 };
+
 
 
 module.exports = {
