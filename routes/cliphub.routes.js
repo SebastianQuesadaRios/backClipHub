@@ -52,8 +52,19 @@ router.post(
     }
 );
 
+// Nueva ruta para obtener todos los videos
+router.get('/videos', async (req, res) => {
+    try {
+        await videoController.getVideos(req, res); // Llamar al controlador para obtener los videos
+    } catch (error) {
+        console.error('Error al obtener los videos:', error);
+        res.status(500).json({ status: "Error", message: "Error interno al obtener los videos" });
+    }
+});
 
 module.exports = router;
+
+
 
 
 

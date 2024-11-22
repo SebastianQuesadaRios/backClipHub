@@ -45,10 +45,21 @@ const uploadVideo = async (req, res) => {
     }
 };
 
+const getVideos = async (req, res) => {
+    try {
+        const db = await connectDb();
+        const videos = await db.collection('videos').find().toArray(); // Trae todos los documentos
+        res.status(200).json(videos);
+    } catch (error) {
+        console.error('Error al obtener los videos:', error);
+        res.status(500).json({ status: 'Error', message: 'No se pudieron obtener los videos' });
+    }
+};
 
 
 module.exports = {
-    uploadVideo
+    uploadVideo,
+    getVideos
 };
 
 
