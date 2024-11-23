@@ -4,7 +4,7 @@ const router = require('./routes/cliphub.routes.js');
 require('dotenv').config();
 
 const app = express();
-app.use=(cors())
+app.use=(cors());
 // Middleware para eliminar restricciones de CORS
 
 
