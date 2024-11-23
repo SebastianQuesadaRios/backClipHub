@@ -2,14 +2,19 @@ const express = require('express');
 const { urlencoded, json } = require('express');
 const router = require('./routes/cliphub.routes.js');
 const cors = require('cors');
-require('dotenv').config();
 const app = express();
+require('dotenv').config();
 
-app.use(cors());
+const whiteList = ['https://front-clip-hub.vercel.app']
 
-// Middleware para analizar datos codificados y JSON con límites más altos
 app.use(json({ limit: '1gb' })); // Aumenta el límite del cuerpo JSON a 1 GB
 app.use(urlencoded({ limit: '1gb', extended: true })); // Aumenta el límite para datos de formularios
+app.use(cors({
+    origin: whiteList
+}));
+
+
+
 
 // Ruta raíz
 app.get('/', (req, res) => {
