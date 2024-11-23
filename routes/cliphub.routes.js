@@ -3,8 +3,8 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const router = express.Router();
 const { login, register } = require('./controllers/cliphubControllers');
-const uploadMiddleware = require('../database/uploadMiddleware'); // Asegúrate de que esté apuntando correctamente
-const videoController = require('./controllers/videoController'); // Controlador para gestionar la subida de videos
+const uploadMiddleware = require('../database/uploadMiddleware');
+const videoController = require('./controllers/videoController');
 
 // Cargar las variables de entorno correctamente
 dotenv.config({ path: './config.env' });
@@ -21,7 +21,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Ruta para el login
 router.post('/login', async (req, res) => {
     try {
-        await login(req, res); // Llamar al controlador de login
+        await login(req, res);
     } catch (error) {
         console.error('Error al procesar login:', error);
         res.status(500).json({ status: "Error", message: "Error interno al procesar el login" });
@@ -31,7 +31,7 @@ router.post('/login', async (req, res) => {
 // Ruta para el registro
 router.post('/register', async (req, res) => {
     try {
-        await register(req, res); // Llamar al controlador de registro
+        await register(req, res);
     } catch (error) {
         console.error('Error al procesar registro:', error);
         res.status(500).json({ status: "Error", message: "Error interno al procesar el registro" });
@@ -41,10 +41,10 @@ router.post('/register', async (req, res) => {
 // Ruta para subir video
 router.post(
     '/upload-video',
-    uploadMiddleware,  // Middleware para manejar múltiples archivos
+    uploadMiddleware,
     async (req, res) => {
         try {
-            await videoController.uploadVideo(req, res); // Llamar al controlador de subida de video
+            await videoController.uploadVideo(req, res);
         } catch (error) {
             console.error('Error al procesar la subida del video:', error);
             res.status(500).json({ status: "Error", message: "Error interno al procesar la subida del video" });
@@ -52,17 +52,28 @@ router.post(
     }
 );
 
-// Nueva ruta para obtener todos los videos
+// Ruta para obtener todos los videos
 router.get('/videos', async (req, res) => {
     try {
-        await videoController.getVideos(req, res); // Llamar al controlador para obtener los videos
+        await videoController.getVideos(req, res);
     } catch (error) {
         console.error('Error al obtener los videos:', error);
         res.status(500).json({ status: "Error", message: "Error interno al obtener los videos" });
     }
 });
 
+// Nueva ruta para obtener un video específico por ID
+router.get('/video/:videoId', async (req, res) => {
+    try {
+        await videoController.getVideoById(req, res); // Llamar al controlador para obtener video por ID
+    } catch (error) {
+        console.error('Error al obtener el video:', error);
+        res.status(500).json({ status: "Error", message: "Error interno al obtener el video" });
+    }
+});
+
 module.exports = router;
+
 
 
 

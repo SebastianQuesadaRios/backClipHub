@@ -5,18 +5,16 @@ const moment = require('moment-timezone');
 const uploadVideo = async (req, res) => {
     const { title, description, username } = req.body; // Cambiado de userId a username
 
-    // Verifica que los archivos y los campos obligatorios estén presentes
     if (!req.files || !req.files.video || !req.files.preview || !title || !description || !username) {
         return res.status(400).json({ status: "Error", message: "Faltan campos obligatorios o los archivos" });
     }
 
     try {
-        const videoUrl = req.files.video[0].location; // URL del video subido a S3
-        const previewUrl = req.files.preview[0].location; // URL de la imagen de preview subida a S3
+        const videoUrl = req.files.video[0].location; 
+        const previewUrl = req.files.preview[0].location; 
 
-        const db = await connectDb(); // Conectar a la base de datos
+        const db = await connectDb();
 
-        // Buscar el usuario en la base de datos usando el campo 'correo' (ya que 'username' es el correo en el frontend)
         const user = await db.collection('users').findOne({ correo: username });
         if (!user) {
             return res.status(404).json({ status: "Error", message: "Usuario no encontrado" });
@@ -25,13 +23,12 @@ const uploadVideo = async (req, res) => {
         const newVideo = {
             title,
             description,
-            userId: user._id, // Asociar el _id del usuario
-            videoUrl, // URL del video
-            previewUrl, // URL de la imagen de preview
+            userId: user._id, 
+            videoUrl, 
+            previewUrl, 
             uploadDate: moment().format(),
         };
 
-        // Guardar el video en la base de datos
         await db.collection('videos').insertOne(newVideo);
         res.status(201).json({ 
             status: "Éxito", 
@@ -50,7 +47,6 @@ const getVideos = async (req, res) => {
         const db = await connectDb();
         const videos = await db.collection('videos').find().toArray();
 
-        // Iterar sobre los videos para agregar el nombre del usuario
         const videosWithUsernames = await Promise.all(
             videos.map(async (video) => {
                 const user = await db.collection('users').findOne({ _id: video.userId });
@@ -58,7 +54,7 @@ const getVideos = async (req, res) => {
                     ...video,
                     _id: video._id.toString(),
                     userId: video.userId.toString(),
-                    username: user ? user.nombre : "Usuario desconocido", // Agregar el nombre del usuario
+                    username: user ? user.nombre : "Usuario desconocido",
                 };
             })
         );
@@ -70,12 +66,40 @@ const getVideos = async (req, res) => {
     }
 };
 
+// Nueva función para obtener un video específico
+const getVideoById = async (req, res) => {
+    const { videoId } = req.params;
 
+    try {
+        const db = await connectDb();
+        const video = await db.collection('videos').findOne({ _id: new ObjectId(videoId) });
+
+        if (!video) {
+            return res.status(404).json({ status: 'Error', message: 'Video no encontrado' });
+        }
+
+        // Obtener el nombre del usuario asociado al video
+        const user = await db.collection('users').findOne({ _id: video.userId });
+        const videoWithUsername = {
+            ...video,
+            _id: video._id.toString(),
+            userId: video.userId.toString(),
+            username: user ? user.nombre : "Usuario desconocido",
+        };
+
+        res.status(200).json(videoWithUsername);
+    } catch (error) {
+        console.error('Error al obtener el video:', error);
+        res.status(500).json({ status: 'Error', message: 'No se pudo obtener el video' });
+    }
+};
 
 module.exports = {
     uploadVideo,
-    getVideos
+    getVideos,
+    getVideoById, // Exporta la nueva función
 };
+
 
 
 
