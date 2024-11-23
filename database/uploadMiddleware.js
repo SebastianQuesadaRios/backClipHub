@@ -35,6 +35,9 @@ const upload = multer({
             cb(new Error('Solo se permiten archivos de video e imagen.'));
         }
     },
+    limits: {
+        fileSize: 500 * 1024 * 1024, // 500 MB
+    },
 });
 
 const uploadMiddleware = upload.fields([
