@@ -8,10 +8,11 @@ const app = express();
 
 // Configuración de CORS
 const corsOptions = {
-    origin: '*', // Permite cualquier dominio
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
-    allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
+    origin: ['https://front-clip-hub.vercel.app'], // Solo permite este dominio
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 };
+
 
 app.use(cors(corsOptions));
 
