@@ -10,7 +10,7 @@ const app = express();
 const corsOptions = {
     origin: ['http://localhost:5173', 'https://front-clip-hub.vercel.app/'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['*'],
 };
 
 app.use(cors(corsOptions));
