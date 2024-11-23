@@ -31,7 +31,7 @@ app.use(json());
 
 // Ruta raíz
 app.get('/', (req, res) => {
-    res.send('Este es el backend sin restricciones de CORS');
+    res.send('Este es el backend');
 });
 
 // Usar las rutas de ClipHub
