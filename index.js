@@ -3,16 +3,9 @@ const { urlencoded, json } = require('express');
 const router = require('./routes/cliphub.routes.js');
 const cors = require('cors');
 require('dotenv').config();
-
 const app = express();
 
-// Configuración de CORS
-const corsOptions = {
-    origin: ['https://front-clip-hub.vercel.app'], // Solo permite este dominio
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-};
-app.use(cors(corsOptions));
+app.use(cors());
 
 // Middleware para analizar datos codificados y JSON con límites más altos
 app.use(json({ limit: '1gb' })); // Aumenta el límite del cuerpo JSON a 1 GB
