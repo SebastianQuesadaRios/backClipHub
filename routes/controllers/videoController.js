@@ -78,19 +78,10 @@ const getVideoById = async (req, res) => {
             return res.status(404).json({ status: 'Error', message: 'Video no encontrado' });
         }
 
-        // Obtener el nombre del usuario asociado al video
-        const user = await db.collection('users').findOne({ _id: video.userId });
-        const videoWithUsername = {
-            ...video,
-            _id: video._id.toString(),
-            userId: video.userId.toString(),
-            username: user ? user.nombre : "Usuario desconocido",
-        };
-
-        res.status(200).json(videoWithUsername);
+        res.status(200).json(video);
     } catch (error) {
         console.error('Error al obtener el video:', error);
-        res.status(500).json({ status: 'Error', message: 'No se pudo obtener el video' });
+        res.status(500).json({ status: 'Error', message: 'Error interno al obtener el video' });
     }
 };
 
