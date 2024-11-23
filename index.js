@@ -12,7 +12,7 @@ app.use(urlencoded({ limit: '1gb', extended: true })); // Aumenta el límite par
 app.use(cors({
     origin: whiteList
 }));
-
+//configuracion de cors
 
 
 
