@@ -8,9 +8,9 @@ const app = express();
 
 // Configuración de CORS
 const corsOptions = {
-    origin: ['http://localhost:5173', 'https://front-clip-hub.vercel.app', 'https://front-clip-hub.vercel.app/upload-video'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['*'],
+    origin: '*', // Permite cualquier dominio
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+    allowedHeaders: ['Content-Type', 'Authorization'], // Encabezados permitidos
 };
 
 app.use(cors(corsOptions));
