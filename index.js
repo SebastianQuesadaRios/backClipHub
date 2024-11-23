@@ -4,26 +4,9 @@ const router = require('./routes/cliphub.routes.js');
 require('dotenv').config();
 
 const app = express();
-
+app.use=(cors())
 // Middleware para eliminar restricciones de CORS
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*'); // Permitir todos los orígenes
-    res.header(
-        'Access-Control-Allow-Methods',
-        'GET, POST, PUT, DELETE, OPTIONS'
-    ); // Permitir todos los métodos
-    res.header(
-        'Access-Control-Allow-Headers',
-        'Content-Type, Authorization'
-    ); // Permitir estos encabezados
 
-    // Manejar solicitudes preflight
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
-    next(); // Pasar al siguiente middleware
-});
 
 // Middleware para analizar datos codificados y JSON
 app.use(urlencoded({ extended: true }));
