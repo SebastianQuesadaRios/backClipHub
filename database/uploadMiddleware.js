@@ -25,6 +25,7 @@ const upload = multer({
             cb(null, uniqueKey);
         },
     }),
+    limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB como límite máximo
     fileFilter: (req, file, cb) => {
         if (
             (file.fieldname === 'video' && file.mimetype.startsWith('video/')) ||
@@ -36,6 +37,7 @@ const upload = multer({
         }
     },
 });
+
 
 const uploadMiddleware = upload.fields([
     { name: 'video', maxCount: 1 },
