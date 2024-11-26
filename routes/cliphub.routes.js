@@ -70,7 +70,7 @@ router.get('/video/:videoId', async (req, res) => {
         console.error('Error al obtener el video:', error);
         res.status(500).json({ status: "Error", message: "Error interno al obtener el video" });
     }
-}); 
+});
 
 module.exports = router;
 

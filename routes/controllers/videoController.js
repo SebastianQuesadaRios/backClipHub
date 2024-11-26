@@ -67,39 +67,28 @@ const getVideos = async (req, res) => {
 };
 
 // Nueva función para obtener un video específico
-const getVideosByCorreo = async (req, res) => {
-    const { correo } = req.params;
+const getVideoById = async (req, res) => {
+    const { videoId } = req.params;
 
     try {
         const db = await connectDb();
+        const video = await db.collection('videos').findOne({ _id: new ObjectId(videoId) });
 
-        // Encuentra el usuario por correo
-        const user = await db.collection('users').findOne({ correo });
-        if (!user) {
-            return res.status(404).json({ status: 'Error', message: 'Usuario no encontrado' });
+        if (!video) {
+            return res.status(404).json({ status: 'Error', message: 'Video no encontrado' });
         }
 
-        // Encuentra los videos asociados al ID del usuario
-        const videos = await db.collection('videos').find({ userId: user._id }).toArray();
-
-        const videosWithUsernames = videos.map((video) => ({
-            ...video,
-            _id: video._id.toString(),
-            userId: video.userId.toString(),
-            username: user.nombre, // Incluye el nombre del usuario
-        }));
-
-        res.status(200).json(videosWithUsernames);
+        res.status(200).json(video);
     } catch (error) {
-        console.error('Error al obtener los videos por correo:', error);
-        res.status(500).json({ status: 'Error', message: 'No se pudieron obtener los videos' });
+        console.error('Error al obtener el video:', error);
+        res.status(500).json({ status: 'Error', message: 'Error interno al obtener el video' });
     }
 };
 
 module.exports = {
     uploadVideo,
     getVideos,
-    getVideosByCorreo, // Exporta la nueva función
+    getVideoById, // Exporta la nueva función
 };
 
 
