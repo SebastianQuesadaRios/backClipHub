@@ -62,19 +62,15 @@ router.get('/videos', async (req, res) => {
     }
 });
 
-const { getVideosByCorreo } = require('./controllers/videoController');
-
-// Agregar la ruta para obtener los videos por correo
-router.get('/videos/usuario/:correo', async (req, res) => {
+// Nueva ruta para obtener un video específico por ID
+router.get('/video/:videoId', async (req, res) => {
     try {
-        await getVideosByCorreo(req, res); // Llama a la función del controlador
+        await videoController.getVideoById(req, res); // Llamar al controlador para obtener video por ID
     } catch (error) {
-        console.error('Error al obtener los videos por correo:', error);
-        res.status(500).json({ status: "Error", message: "Error interno al obtener los videos por correo" });
+        console.error('Error al obtener el video:', error);
+        res.status(500).json({ status: "Error", message: "Error interno al obtener el video" });
     }
-});
-
-
+}); 
 
 module.exports = router;
 
