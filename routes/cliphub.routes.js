@@ -63,6 +63,7 @@ router.get('/videos', async (req, res) => {
 });
 
 // Nueva ruta para obtener un video específico por ID
+/*
 router.get('/video/:videoId', async (req, res) => {
     try {
         await videoController.getVideoById(req, res); // Llamar al controlador para obtener video por ID
@@ -70,7 +71,7 @@ router.get('/video/:videoId', async (req, res) => {
         console.error('Error al obtener el video:', error);
         res.status(500).json({ status: "Error", message: "Error interno al obtener el video" });
     }
-});
+}); */
 
 module.exports = router;
 
