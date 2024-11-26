@@ -66,12 +66,29 @@ const getVideos = async (req, res) => {
     }
 };
 
+// Nueva función para obtener un video específico
+const getVideoById = async (req, res) => {
+    const { videoId } = req.params;
 
+    try {
+        const db = await connectDb();
+        const video = await db.collection('videos').findOne({ _id: new ObjectId(videoId) });
 
+        if (!video) {
+            return res.status(404).json({ status: 'Error', message: 'Video no encontrado' });
+        }
+
+        res.status(200).json(video);
+    } catch (error) {
+        console.error('Error al obtener el video:', error);
+        res.status(500).json({ status: 'Error', message: 'Error interno al obtener el video' });
+    }
+};
 
 module.exports = {
     uploadVideo,
-    getVideos
+    getVideos,
+    getVideoById, // Exporta la nueva función
 };
 
 
