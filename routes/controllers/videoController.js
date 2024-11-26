@@ -96,7 +96,6 @@ const getVideosByCorreo = async (req, res) => {
     }
 };
 
-
 module.exports = {
     uploadVideo,
     getVideos,
