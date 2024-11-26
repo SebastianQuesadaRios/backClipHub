@@ -94,7 +94,7 @@ const getVideosByCorreo = async (req, res) => {
 module.exports = {
     uploadVideo,
     getVideos,
-    getVideosByCorreo, // Exporta la nueva función
+    getVideosByCorreo // Exporta la nueva función
 };
 
 
